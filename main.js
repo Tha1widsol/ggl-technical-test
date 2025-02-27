@@ -167,7 +167,7 @@ const setupABTesting = () => {
 
 
 /**
- * Funtion to run main program
+ * Function to run main program
  */
 const main = async () => {
     const group = setupABTesting()
