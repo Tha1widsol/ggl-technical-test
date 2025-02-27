@@ -1,3 +1,9 @@
+
+/**
+ * Function to traverse and find the latitude and longitude coordinates
+ *
+ * @returns {{latitude: number, longitude: number} | undefined} 
+ */
 const getCoordsFromPage = () => {
     let scriptData = document.getElementById("__NEXT_DATA__")?.textContent
     if (!scriptData) return
@@ -17,6 +23,13 @@ const getCoordsFromPage = () => {
     return locationData?.latitudeLongitude
 }
 
+
+/**
+ * Creates weather card to display weather time and data
+ *
+ * @param {Object} forecast 
+ * @returns {HTMLDivElement} 
+ */
 const createWeatherCard = (forecast) => {
     const { main, weather, dt_txt: time } = forecast
     const temperature = main?.temp?.toFixed(1) ?? "N/A";
@@ -67,6 +80,12 @@ const createWeatherCard = (forecast) => {
 };
 
 
+
+/**
+ * Renders the weather view on the screen
+ *
+ * @param {Object} data 
+ */
 const renderWeatherView = (data) => {
     const targetElement = document.querySelector("div[data-testid='place-summary-links']")
     if (!targetElement) {
@@ -132,22 +151,52 @@ const renderWeatherView = (data) => {
     container.appendChild(weatherContainer)
 }
 
+/**
+ * Function to assign user to a group
+ *
+ * @returns {string} group
+ */
+const setupABTesting = () => {
+    let group = localStorage.getItem("testGroup")
+    if (!group) {
+        group = Math.random() < 0.5 ? "control" : "test"
+        localStorage.setItem("testGroup", group)
+    }
+    return group
+}
+
+
+/**
+ * Funtion to run main program
+ */
 const main = async () => {
-    const coords = getCoordsFromPage()
-    if (!coords) {
-        console.error("Cannot find coordinates")
+    const group = setupABTesting()
+    if (group !== "test") {
+        console.info("You are not in the test group. Therefore you can't view the changes.")
         return
     }
+    let latitude = 27.987850
+    let longitude = 86.925026
 
-    console.log(coords.latitude, coords.longitude)
+    const coords = getCoordsFromPage()
+    if (coords) {
+        console.log("Using coordinates...")
+        latitude = coords.latitude
+        longitude = coords.longitude
+    }
+
+    else {
+        console.error("Cannot find coordinates. Using mock data instead")
+    }
 
     try {
-        const response = await fetch(`https://europe-west1-amigo-actions.cloudfunctions.net/recruitment-mock-weather-endpoint/forecast?appid=a2ef86c41a&lat=${coords.latitude}&lon=${coords.longitude}`)
-        const data = await response.json()
+        const response = await fetch(`https://europe-west1-amigo-actions.cloudfunctions.net/recruitment-mock-weather-endpoint/forecast?appid=a2ef86c41a&lat=${latitude}&lon=${longitude}`)
+        const data = response.ok ? await response.json() : null
+        if (!data) return
         renderWeatherView(data)
     } catch (error) {
         console.error("Error fetching weather data", error)
     }
 }
 
-main()
+main();
